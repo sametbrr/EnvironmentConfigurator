@@ -11,7 +11,7 @@
 
   <PropertyGroup>
     <PackageId>EnvironmentConfigurator</PackageId>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <Authors>sametbrr</Authors>
     <Description>Environment-aware configuration for ASP.NET Core. Adds appsettings.{Environment}.json loading via a single builder call and auto-scaffolds publish profiles, web.config and per-environment appsettings into the consuming project on first build.</Description>
     <PackageTags>aspnetcore;configuration;environment;appsettings;webdeploy;publish;dotnet8;dotnet9;dotnet10;iis;web.config;scaffolding;pubxml;launchsettings;dotnet</PackageTags>
