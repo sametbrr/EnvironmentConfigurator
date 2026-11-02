@@ -2,6 +2,8 @@
 [![Downloads](https://img.shields.io/nuget/dt/EnvironmentConfigurator.svg)](https://www.nuget.org/packages/EnvironmentConfigurator)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.txt)
 
+[Hızlı Başlangıç](#hızlı-başlangıç) • [Kurulum](#kurulum) • [Kullanım](#kullanım) • [Otomatik Oluşturma (Dosya Üretimi)](#otomatik-oluşturma-dosya-üretimi) • [Ortam Seçimi](#ortam-seçimi) • [Katkıda Bulunma](#katkıda-bulunma)
+
 # EnvironmentConfigurator
 
 Tek çağrıyla ortama duyarlı konfigürasyon yükleyen, publish profilleri ve appsettings dosyalarını otomatik oluşturan ASP.NET Core paketi.
@@ -90,6 +92,17 @@ builder.AddEnvironmentConfiguration(options =>
 
 ---
 
+## Proje Yapısı
+
+```
+EnvironmentConfigurator.sln
+├── EnvironmentConfigurator/           → NuGet paketi (kod + scaffold hedefi + şablonlar)
+├── EnvironmentConfiguratorApi/        → paketi kullanan örnek API
+└── EnvironmentConfigurator.Tests/     → xUnit testleri
+```
+
+---
+
 ## Otomatik Oluşturma (Dosya Üretimi)
 
 Paketi kurduktan ve **ilk kez** derledikten sonra, projenizde henüz bulunmayan aşağıdaki dosyalar otomatik olarak oluşturulur:
@@ -148,7 +161,7 @@ Hangi `appsettings.{X}.json` dosyasının yükleneceğine `ASPNETCORE_ENVIRONMEN
 
 ---
 
-## Publish / Web Deploy
+## Yayınlama / Web Deploy
 
 Visual Studio'da publish profillerini (`.pubxml`) kullanın. Her profil ortamını `<EnvironmentName>` ile ayarlar; doğru konfigürasyon publish anında seçilir.
 
@@ -180,26 +193,32 @@ curl http://localhost:5000/test/environment-name   # → "Beta"
 
 ---
 
-## Proje Yapısı
-
-```
-EnvironmentConfigurator.sln
-├── EnvironmentConfigurator/           → NuGet paketi (kod + scaffold hedefi + şablonlar)
-├── EnvironmentConfiguratorApi/        → paketi kullanan örnek API
-└── EnvironmentConfigurator.Tests/     → xUnit testleri
-```
-
----
-
 ## Paketi Yerelde Derleme
 
 ```bash
 dotnet pack EnvironmentConfigurator -c Release -o ./artifacts
-# → artifacts/EnvironmentConfigurator.1.0.3.nupkg
+# → artifacts/EnvironmentConfigurator.1.1.1.nupkg
 ```
+
+---
+
+## Katkıda Bulunma
+
+- Sorular ve fikirler: [Discussions](https://github.com/sametbrr/EnvironmentConfigurator/discussions)
+- Hatalar: [issue takibi](https://github.com/sametbrr/EnvironmentConfigurator/issues)
+- Pull request'ler: önce [katkı rehberini](https://github.com/sametbrr/.github/blob/main/CONTRIBUTING.md) okuyun
+- Güvenlik bildirimleri: herkese açık issue yerine [güvenlik politikasını](https://github.com/sametbrr/EnvironmentConfigurator/security/policy) izleyin
 
 ---
 
 ## Lisans
 
 MIT — bkz. [LICENSE.txt](LICENSE.txt).
+
+---
+
+<div align="center">
+
+[Hata Bildir](https://github.com/sametbrr/EnvironmentConfigurator/issues) · [Özellik İste](https://github.com/sametbrr/EnvironmentConfigurator/issues)
+
+</div>

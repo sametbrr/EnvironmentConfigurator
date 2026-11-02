@@ -2,6 +2,8 @@
 [![Downloads](https://img.shields.io/nuget/dt/EnvironmentConfigurator.svg)](https://www.nuget.org/packages/EnvironmentConfigurator)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.txt)
 
+[Quick Start](#quick-start) • [Installation](#installation) • [Usage](#usage) • [Auto-scaffold (file generation)](#auto-scaffold-file-generation) • [Environment selection](#environment-selection) • [Contributing](#contributing)
+
 # EnvironmentConfigurator
 
 ASP.NET Core package for single-call environment-aware config loading with auto-scaffolded publish profiles and appsettings.
@@ -86,6 +88,17 @@ builder.AddEnvironmentConfiguration(options =>
     options.IncludeEnvironmentVariables = true;    // add the env variables source (default: true)
     options.BasePath                    = "config"; // if JSON files live in another folder
 });
+```
+
+---
+
+## Project Structure
+
+```
+EnvironmentConfigurator.sln
+├── EnvironmentConfigurator/           → NuGet package (code + scaffold target + templates)
+├── EnvironmentConfiguratorApi/        → sample API consuming the package
+└── EnvironmentConfigurator.Tests/     → xUnit tests
 ```
 
 ---
@@ -180,26 +193,32 @@ curl http://localhost:5000/test/environment-name   # → "Beta"
 
 ---
 
-## Project structure
-
-```
-EnvironmentConfigurator.sln
-├── EnvironmentConfigurator/           → NuGet package (code + scaffold target + templates)
-├── EnvironmentConfiguratorApi/        → sample API consuming the package
-└── EnvironmentConfigurator.Tests/     → xUnit tests
-```
-
----
-
 ## Building the package locally
 
 ```bash
 dotnet pack EnvironmentConfigurator -c Release -o ./artifacts
-# → artifacts/EnvironmentConfigurator.1.0.3.nupkg
+# → artifacts/EnvironmentConfigurator.1.1.1.nupkg
 ```
+
+---
+
+## Contributing
+
+- Questions and ideas: [Discussions](https://github.com/sametbrr/EnvironmentConfigurator/discussions)
+- Bugs: [issue tracker](https://github.com/sametbrr/EnvironmentConfigurator/issues)
+- Pull requests: read the [contribution guide](https://github.com/sametbrr/.github/blob/main/CONTRIBUTING.md) first
+- Security reports: follow the [security policy](https://github.com/sametbrr/EnvironmentConfigurator/security/policy), not a public issue
 
 ---
 
 ## License
 
 MIT — see [LICENSE.txt](LICENSE.txt).
+
+---
+
+<div align="center">
+
+[Report Bug](https://github.com/sametbrr/EnvironmentConfigurator/issues) · [Request Feature](https://github.com/sametbrr/EnvironmentConfigurator/issues)
+
+</div>
