@@ -1,3 +1,7 @@
+# Release: NuGet package on a <Version> bump in EnvironmentConfigurator.csproj (master only).
+# The tag v<version> is created if missing; an existing tag means "already released", nothing runs.
+# Then: test, pack, push to nuget.org, tag, GitHub release (notes from commit subjects, via a file).
+# Auth: a NUGET_API_KEY secret (nuget.org → API keys, scope "Push").
 name: Publish NuGet on Version Bump
 
 on:
@@ -7,78 +11,95 @@ on:
       - EnvironmentConfigurator/EnvironmentConfigurator.csproj
   workflow_dispatch:
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  PROJECT: EnvironmentConfigurator/EnvironmentConfigurator.csproj
+
 jobs:
   publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.0.x
+      - name: Check ref
+        env:
+          DEFAULT_BRANCH: master
+        run: |
+          if [ "$GITHUB_REF_TYPE" != branch ] || [ "$GITHUB_REF_NAME" != "$DEFAULT_BRANCH" ]; then
+            echo "::error::releases run only from $DEFAULT_BRANCH (got $GITHUB_REF_TYPE $GITHUB_REF_NAME)"; exit 1
+          fi
 
       - name: Read version from csproj
         id: version
         run: |
-          RAW=$(grep -m1 '<Version>' EnvironmentConfigurator/EnvironmentConfigurator.csproj \
-            | sed -E 's/.*<Version>([^<]+)<\/Version>.*/\1/')
-          echo "version=${RAW}" >> "$GITHUB_OUTPUT"
-          echo "tag=v${RAW}" >> "$GITHUB_OUTPUT"
-          echo "Detected version: v${RAW}"
-
-      - name: Check if tag already exists
-        id: tag_check
-        run: |
-          if git rev-parse "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
+          VERSION=$(sed -n 's:.*<Version>[[:space:]]*\([^<[:space:]]*\)[[:space:]]*</Version>.*:\1:p' "$PROJECT" | head -1)
+          if [ -z "$VERSION" ]; then echo "::error::no <Version> in $PROJECT"; exit 1; fi
+          TAG="v${VERSION}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Detected version: $TAG"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "Tag $TAG already exists; nothing to release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
           else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "release=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - uses: actions/setup-dotnet@v6
+        if: steps.version.outputs.release == 'true'
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
       - name: Run tests
-        if: steps.tag_check.outputs.exists == 'false'
+        if: steps.version.outputs.release == 'true'
         run: dotnet test EnvironmentConfigurator.sln -c Release
 
       - name: Pack
-        if: steps.tag_check.outputs.exists == 'false'
-        run: dotnet pack EnvironmentConfigurator -c Release -o ./artifacts
+        if: steps.version.outputs.release == 'true'
+        run: dotnet pack "$PROJECT" -c Release -o ./artifacts
 
       - name: Push to NuGet
-        if: steps.tag_check.outputs.exists == 'false'
+        if: steps.version.outputs.release == 'true'
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
+          if [ -z "$NUGET_API_KEY" ]; then echo "::error::NUGET_API_KEY secret is not set"; exit 1; fi
           dotnet nuget push ./artifacts/*.nupkg \
-            --api-key "${{ secrets.NUGET_API_KEY }}" \
+            --api-key "$NUGET_API_KEY" \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
 
-      - name: Generate release notes from git log
-        if: steps.tag_check.outputs.exists == 'false'
-        id: notes
+      - name: Write release notes
+        if: steps.version.outputs.release == 'true'
         run: |
-          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [ -z "$PREV_TAG" ]; then
-            LOG=$(git log --oneline | head -20)
+          NOTES="$RUNNER_TEMP/notes.md"
+          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          if [ -n "$PREV_TAG" ]; then
+            git log --pretty='- %s' "${PREV_TAG}..HEAD" > "$NOTES"
           else
-            LOG=$(git log "${PREV_TAG}..HEAD" --oneline)
+            git log --pretty='- %s' -20 > "$NOTES"
           fi
-          echo "notes<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$LOG" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Create tag and release
-        if: steps.tag_check.outputs.exists == 'false'
+        if: steps.version.outputs.release == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
-          TAG="${{ steps.version.outputs.tag }}"
           git tag "$TAG"
           git push origin "$TAG"
-          gh release create "$TAG" \
+          gh release create "$TAG" ./artifacts/*.nupkg \
             --title "EnvironmentConfigurator $TAG" \
-            --notes "${{ steps.notes.outputs.notes }}" \
-            ./artifacts/*.nupkg
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --verify-tag
