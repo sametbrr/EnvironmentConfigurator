@@ -1,7 +1,8 @@
 # Release: NuGet package on a <Version> bump in EnvironmentConfigurator.csproj (master only).
 # The tag v<version> is created if missing; an existing tag means "already released", nothing runs.
 # Then: test, pack, push to nuget.org, tag, GitHub release (notes from commit subjects, via a file).
-# Auth: a NUGET_API_KEY secret (nuget.org → API keys, scope "Push").
+# Auth: nuget.org trusted publishing (OIDC). Policy: owner sametbrr, repo EnvironmentConfigurator,
+# workflow publish-nuget.yml, environment nuget. No API key is stored.
 name: Publish NuGet on Version Bump
 
 on:
@@ -17,6 +18,7 @@ concurrency:
 
 permissions:
   contents: write
+  id-token: write   # OIDC token for nuget.org trusted publishing
 
 env:
   PROJECT: EnvironmentConfigurator/EnvironmentConfigurator.csproj
@@ -24,6 +26,7 @@ env:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: nuget
     steps:
       - uses: actions/checkout@v7
         with:
@@ -69,12 +72,19 @@ jobs:
         if: steps.version.outputs.release == 'true'
         run: dotnet pack "$PROJECT" -c Release -o ./artifacts
 
+      - name: NuGet login (OIDC)
+        if: steps.version.outputs.release == 'true'
+        id: login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: sametbrr
+
       - name: Push to NuGet
         if: steps.version.outputs.release == 'true'
         env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
         run: |
-          if [ -z "$NUGET_API_KEY" ]; then echo "::error::NUGET_API_KEY secret is not set"; exit 1; fi
+          if [ -z "$NUGET_API_KEY" ]; then echo "::error::NuGet login returned no API key (check the trusted publishing policy)"; exit 1; fi
           dotnet nuget push ./artifacts/*.nupkg \
             --api-key "$NUGET_API_KEY" \
             --source https://api.nuget.org/v3/index.json \
