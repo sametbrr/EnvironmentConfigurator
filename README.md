@@ -197,7 +197,7 @@ curl http://localhost:5000/test/environment-name   # → "Beta"
 
 ```bash
 dotnet pack EnvironmentConfigurator -c Release -o ./artifacts
-# → artifacts/EnvironmentConfigurator.1.1.1.nupkg
+# → artifacts/EnvironmentConfigurator.1.1.2.nupkg
 ```
 
 ---
